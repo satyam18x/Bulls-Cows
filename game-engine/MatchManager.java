@@ -1,3 +1,4 @@
+
 public class MatchManager {
 
     private Player player1;
@@ -8,8 +9,11 @@ public class MatchManager {
 
     private Player winner;
 
+    private NumberValidator validator =
+        new NumberValidator();
+
     public MatchManager(Player player1,
-                        Player player2) {
+            Player player2) {
 
         this.player1 = player1;
         this.player2 = player2;
@@ -46,45 +50,52 @@ public class MatchManager {
 
     public GuessResult submitGuess(String guess) {
 
-    Player currentPlayer = getCurrentPlayer();
+        Player currentPlayer = getCurrentPlayer();
 
-    Player opponent = getOpponent();
+        Player opponent = getOpponent();
 
-    GuessResult result =
-            gameEngine.checkGuess(
-                    opponent.getSecretNumber(),
-                    guess
+        if (!validator.isValidNumber(guess)) {
+            throw new IllegalArgumentException(
+                    "Invalid guess: " + guess
             );
+        }
 
-    GuessRecord record =
-            new GuessRecord(
-                    currentPlayer.getName(),
-                    guess,
-                    result.getBulls(),
-                    result.getCows()
-            );
+        GuessResult result
+                = gameEngine.checkGuess(
+                        opponent.getSecretNumber(),
+                        guess
+                );
 
-    gameState.addRecord(record);
+        GuessRecord record
+                = new GuessRecord(
+                        currentPlayer.getName(),
+                        guess,
+                        result.getBulls(),
+                        result.getCows()
+                );
 
-    if (gameEngine.isWinner(result)) {
+        gameState.addRecord(record);
 
-        winner = currentPlayer;
+        if (gameEngine.isWinner(result)) {
 
-        gameState.setGameOver(true);
+            winner = currentPlayer;
+
+            gameState.setGameOver(true);
+        } else {
+
+            gameState.switchTurn();
+        }
+
+        return result;
     }
-    else {
 
-        gameState.switchTurn();
+    public boolean isGameOver() {
+        return gameState.isGameOver();
     }
 
-    return result;
-}
+    public boolean isPlayer1Turn() {
+        return gameState.isPlayer1Turn();
+    }
 
-public boolean isGameOver() {
-    return gameState.isGameOver();
-}
-
-public boolean isPlayer1Turn() {
-    return gameState.isPlayer1Turn();
-}
+    
 }
