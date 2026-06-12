@@ -1,14 +1,31 @@
-
 public class Main {
 
     public static void main(String[] args) {
 
-        GameEngine engine = new GameEngine();
-        GuessResult result
-                = engine.checkGuess("5831", "5831");
+        GameState state = new GameState();
 
-        System.out.println(
-                engine.isWinner(result)
+        state.addRecord(
+                new GuessRecord(
+                        "Player1",
+                        "5138",
+                        2,
+                        2
+                )
         );
+
+        state.addRecord(
+                new GuessRecord(
+                        "Player2",
+                        "7204",
+                        1,
+                        1
+                )
+        );
+
+        for (GuessRecord record :
+                state.getHistory()) {
+
+            System.out.println(record);
+        }
     }
 }
