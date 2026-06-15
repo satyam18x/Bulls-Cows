@@ -1,11 +1,11 @@
 import { View, Text,ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react'
-import Flatcards from './components/Flatcards';
-import ElevatedCards from './components/ElevatedCards';
-import FancyCards from './components/FancyCards';
-import ActionCard from './components/ActionCard';
-import ContactList from './components/ContactList';
+import Flatcards from './tutorialComponents/Flatcards';
+import ElevatedCards from './tutorialComponents/ElevatedCards';
+import FancyCards from './tutorialComponents/FancyCards';
+import ActionCard from './tutorialComponents/ActionCard';
+import ContactList from './tutorialComponents/ContactList';
 
 
 const App2 = () => {
