@@ -6,32 +6,58 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
+import { gameEngine } from '../game/GameManager';
+
 const ResultScreen = ({ navigation }: any) => {
-  const isWinner = true; // Change later based on game result
+
+  const totalGuesses =
+    gameEngine.getHistory().length;
+
+  const secretNumber =
+    gameEngine.getSecretNumber();
 
   return (
     <View style={styles.container}>
+
       <Text style={styles.emoji}>
-        {isWinner ? '🎉' : '😢'}
+        🎉
       </Text>
 
       <Text style={styles.resultText}>
-        {isWinner ? 'YOU WIN!' : 'YOU LOSE!'}
+        YOU WIN!
       </Text>
 
       <View style={styles.infoCard}>
+
         <Text style={styles.label}>
-          Opponent's Secret Number
+          Secret Number
         </Text>
 
         <Text style={styles.secretNumber}>
-          5832
+          {secretNumber}
         </Text>
+
+      </View>
+
+      <View style={styles.infoCard}>
+
+        <Text style={styles.label}>
+          Total Guesses
+        </Text>
+
+        <Text style={styles.secretNumber}>
+          {totalGuesses}
+        </Text>
+
       </View>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('Game')}
+        onPress={() =>
+          navigation.navigate(
+            'CreateRoom'
+          )
+        }
       >
         <Text style={styles.buttonText}>
           Play Again
@@ -39,13 +65,21 @@ const ResultScreen = ({ navigation }: any) => {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.button, styles.homeButton]}
-        onPress={() => navigation.navigate('Home')}
+        style={[
+          styles.button,
+          styles.homeButton
+        ]}
+        onPress={() =>
+          navigation.navigate(
+            'Home'
+          )
+        }
       >
         <Text style={styles.buttonText}>
           Back To Home
         </Text>
       </TouchableOpacity>
+
     </View>
   );
 };
@@ -103,14 +137,14 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
 
-  homeButton: {
-    backgroundColor: '#3A3A3A',
-  },
+homeButton: {
+  backgroundColor: 'white',
+},
 
-  buttonText: {
-    textAlign: 'center',
-    color: 'black',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+ buttonText: {
+  textAlign: 'center',
+  color: '#000',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
 });

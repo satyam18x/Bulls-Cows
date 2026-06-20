@@ -1,4 +1,6 @@
 import React from "react";
+import { createGame } from "../game/GameManager";
+import { NumberGenerator } from "../services/NumberGenerator";
 import {
     View,
     Text,
@@ -9,6 +11,15 @@ import {
 } from "react-native";
 
 function HomeScreen({ navigation }: any) {
+    const handleComputerGame = () => {
+
+        const secretNumber =
+            NumberGenerator.generate();
+
+        createGame(secretNumber);
+
+        navigation.navigate("Game");
+    };
     const isDarkMode = useColorScheme() === "dark";
 
     const textColor = isDarkMode ? styles.wText : styles.darkText;
@@ -27,6 +38,14 @@ function HomeScreen({ navigation }: any) {
             </View>
 
             <View>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={handleComputerGame}
+                >
+                    <Text style={styles.buttonText}>
+                        Play With Computer
+                    </Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.button}
                     onPress={() => navigation.navigate("CreateRoom")}

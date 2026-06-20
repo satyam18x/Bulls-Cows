@@ -7,6 +7,7 @@ import CreateRoomScreen from '../screens/CreateRoom';
 import JoinRoomScreen from '../screens/JoinRoom';
 import GameScreen from '../screens/GameScreen';
 import ResultScreen from '../screens/ResultScreen';
+import SecretSetup from '../screens/SecretSetup';
 
 const Stack = createNativeStackNavigator();
 
@@ -19,6 +20,7 @@ function AppNavigator() {
         <Stack.Screen name="JoinRoom" component={JoinRoomScreen} />
         <Stack.Screen name="Game" component={GameScreen} />
         <Stack.Screen name="Result" component={ResultScreen} />
+        <Stack.Screen name="SecretSetup" component={SecretSetup}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

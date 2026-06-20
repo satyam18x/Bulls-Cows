@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { gameEngine } from '../game/GameManager';
+
 import {
   View,
   Text,
@@ -6,36 +8,158 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  Alert,
+  BackHandler,
 } from 'react-native';
 
 const GameScreen = ({ navigation }: any) => {
+
   const [guess, setGuess] = useState('');
 
-  const guessHistory = [
-    { id: '1', guess: '1234', result: '1 Bull, 2 Cows' },
-    { id: '2', guess: '5678', result: '0 Bulls, 1 Cow' },
-    { id: '3', guess: '9012', result: '2 Bulls, 1 Cow' },
-  ];
+  const [history, setHistory] = useState(
+    gameEngine.getHistory()
+  );
+
+  useEffect(() => {
+
+    const backAction = () => {
+
+      Alert.alert(
+        'Exit Game',
+        'Are you sure you want to leave the game?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Exit',
+            onPress: () => {
+
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+              });
+
+            },
+          },
+        ]
+      );
+
+      return true;
+    };
+
+    const subscription =
+      BackHandler.addEventListener(
+        'hardwareBackPress',
+        backAction
+      );
+
+    return () => {
+      subscription.remove();
+    };
+
+  }, [navigation]);
+
+  const handleExitGame = () => {
+
+    Alert.alert(
+      'Exit Game',
+      'Are you sure you want to leave the game?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Exit',
+          onPress: () => {
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+
+          },
+        },
+      ]
+    );
+
+  };
+
+  const submitGuess = () => {
+
+    try {
+
+      gameEngine.submitGuess(
+        guess
+      );
+
+      setHistory([
+        ...gameEngine.getHistory()
+      ]);
+
+      setGuess('');
+
+      if (
+        gameEngine.isGameOver()
+      ) {
+
+        navigation.navigate(
+          'Result'
+        );
+
+      }
+
+    } catch (error: any) {
+
+      Alert.alert(
+        'Invalid Guess',
+        error.message
+      );
+
+    }
+
+  };
 
   return (
+
     <View style={styles.container}>
 
-      <Text style={styles.title}>BULLS & COWS</Text>
+      <View style={styles.header}>
+
+        <TouchableOpacity
+          onPress={handleExitGame}
+        >
+          <Text style={styles.backButton}>
+            ← Back
+          </Text>
+        </TouchableOpacity>
+
+      </View>
+
+      <Text style={styles.title}>
+        BULLS & COWS
+      </Text>
 
       <View style={styles.secretContainer}>
+
         <Text style={styles.label}>
           Your Secret Number
         </Text>
 
         <Text style={styles.secretNumber}>
-          4271
+          ****
         </Text>
+
       </View>
 
       <View style={styles.turnBox}>
+
         <Text style={styles.turnText}>
           Your Turn
         </Text>
+
       </View>
 
       <Text style={styles.label}>
@@ -52,7 +176,10 @@ const GameScreen = ({ navigation }: any) => {
         onChangeText={setGuess}
       />
 
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={submitGuess}
+      >
         <Text style={styles.buttonText}>
           Submit Guess
         </Text>
@@ -63,42 +190,51 @@ const GameScreen = ({ navigation }: any) => {
       </Text>
 
       <FlatList
-        data={guessHistory}
-        keyExtractor={(item) => item.id}
+        data={history}
+        keyExtractor={(_, index) =>
+          index.toString()
+        }
         renderItem={({ item }) => (
+
           <View style={styles.historyCard}>
+
             <Text style={styles.historyGuess}>
               {item.guess}
             </Text>
 
             <Text style={styles.historyResult}>
-              {item.result}
+              {item.result.bulls}B {item.result.cows}C
             </Text>
+
           </View>
+
         )}
       />
 
-      {/* Temporary */}
-      <TouchableOpacity
-        style={styles.resultButton}
-        onPress={() => navigation.navigate('Result')}
-      >
-        <Text style={styles.buttonText}>
-          Go To Result
-        </Text>
-      </TouchableOpacity>
-
     </View>
+
   );
 };
 
 export default GameScreen;
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: '#121212',
     padding: 20,
+  },
+
+  header: {
+    marginTop: 20,
+    marginBottom: 10,
+  },
+
+  backButton: {
+    color: '#51E927',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 
   title: {
@@ -186,12 +322,7 @@ const styles = StyleSheet.create({
 
   historyResult: {
     color: '#51E927',
+    fontWeight: 'bold',
   },
 
-  resultButton: {
-    backgroundColor: '#51E927',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 10,
-  },
 });

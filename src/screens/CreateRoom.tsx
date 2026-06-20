@@ -1,42 +1,104 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  TextInput,
+  Alert
 } from 'react-native';
 
+import { NumberGenerator } from '../services/NumberGenerator';
+import { NumberValidator } from '../services/NumberValidator';
+import { createGame } from '../game/GameManager';
+
 const CreateRoomScreen = ({ navigation }: any) => {
+
+  const [secretNumber, setSecretNumber] =
+    useState('');
+
   const roomCode = 'ABC123';
 
+  const handleGenerate = () => {
+
+    const generated =
+      NumberGenerator.generate();
+
+    setSecretNumber(generated);
+  };
+
+  const handleStartGame = () => {
+
+    if (
+      !NumberValidator.isValid(
+        secretNumber
+      )
+    ) {
+
+     Alert.alert(
+  'Invalid Number',
+  'Enter a valid 4 digit unique number'
+);
+      return;
+    }
+
+    createGame(secretNumber);
+
+    navigation.navigate(
+      'Game'
+    );
+  };
+
   return (
+
     <View style={styles.container}>
-      <Text style={styles.title}>CREATE ROOM</Text>
 
-      <Text style={styles.label}>Room Code</Text>
-
-      <View style={styles.codeBox}>
-        <Text style={styles.code}>{roomCode}</Text>
-      </View>
-
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Copy Code</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.waiting}>
-        Waiting for opponent...
+      <Text style={styles.title}>
+        CREATE ROOM
       </Text>
 
-      {/* Temporary button for testing */}
+     <TouchableOpacity
+  style={styles.button}
+  onPress={() =>
+    navigation.navigate(
+      'SecretSetup'
+    )
+  }
+>
+  <Text style={styles.buttonText}>
+    Test Secret Setup
+  </Text>
+</TouchableOpacity>
+
+      <Text style={styles.label}>
+        Room Code
+      </Text>
+
+      <View style={styles.codeBox}>
+        <Text style={styles.code}>
+          {roomCode}
+        </Text>
+      </View>
 
       <TouchableOpacity
-        style={styles.startButton}
-        onPress={() => navigation.navigate('Game')}
+        style={styles.button}
       >
         <Text style={styles.buttonText}>
-          Start Test Game
+          Copy Code
         </Text>
       </TouchableOpacity>
+
+      <View style={styles.statusBox}>
+
+  <Text style={styles.waiting}>
+    Waiting for opponent...
+  </Text>
+
+  <Text style={styles.status}>
+    Status: Not Connected
+  </Text>
+
+</View>
     </View>
   );
 };
@@ -44,6 +106,18 @@ const CreateRoomScreen = ({ navigation }: any) => {
 export default CreateRoomScreen;
 
 const styles = StyleSheet.create({
+
+  statusBox: {
+  marginTop: 25,
+  alignItems: 'center',
+},
+
+status: {
+  color: '#FFB74D',
+  marginTop: 10,
+  fontSize: 15,
+},
+
   container: {
     flex: 1,
     backgroundColor: '#121212',
@@ -63,6 +137,14 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     marginBottom: 10,
+  },
+
+  input: {
+    backgroundColor: '#1F1F1F',
+    color: 'white',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
   },
 
   codeBox: {
@@ -86,12 +168,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 
-  startButton: {
-    backgroundColor: '#51E927',
-    marginTop: 30,
-    padding: 15,
-    borderRadius: 10,
-  },
 
   buttonText: {
     textAlign: 'center',
@@ -105,4 +181,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
   },
+
 });
