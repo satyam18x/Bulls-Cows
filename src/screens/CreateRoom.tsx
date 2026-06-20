@@ -1,53 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
-  Alert
 } from 'react-native';
 
-import { NumberGenerator } from '../services/NumberGenerator';
-import { NumberValidator } from '../services/NumberValidator';
-import { createGame } from '../game/GameManager';
+import { roomManager }
+from '../game/gameInstance';
 
 const CreateRoomScreen = ({ navigation }: any) => {
+  const [roomCode, setRoomCode] =
+  useState('');
 
-  const [secretNumber, setSecretNumber] =
-    useState('');
+ useEffect(() => {
 
-  const roomCode = 'ABC123';
+  const room =
+    roomManager.createRoom();
 
-  const handleGenerate = () => {
+  setRoomCode(
+    room.roomCode
+  );
 
-    const generated =
-      NumberGenerator.generate();
-
-    setSecretNumber(generated);
-  };
-
-  const handleStartGame = () => {
-
-    if (
-      !NumberValidator.isValid(
-        secretNumber
-      )
-    ) {
-
-     Alert.alert(
-  'Invalid Number',
-  'Enter a valid 4 digit unique number'
-);
-      return;
-    }
-
-    createGame(secretNumber);
-
-    navigation.navigate(
-      'Game'
-    );
-  };
+}, []); 
 
   return (
 
@@ -57,16 +32,20 @@ const CreateRoomScreen = ({ navigation }: any) => {
         CREATE ROOM
       </Text>
 
-     <TouchableOpacity
+<TouchableOpacity
   style={styles.button}
   onPress={() =>
     navigation.navigate(
-      'SecretSetup'
+      'SecretSetup',
+      {
+        roomCode,
+        role: 'HOST'
+      }
     )
   }
 >
   <Text style={styles.buttonText}>
-    Test Secret Setup
+    Continue
   </Text>
 </TouchableOpacity>
 

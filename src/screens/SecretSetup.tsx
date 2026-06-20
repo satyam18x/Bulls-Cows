@@ -9,13 +9,27 @@ import {
   Alert,
 } from 'react-native';
 
-import { createGame } from '../game/GameManager';
-import { NumberGenerator } from '../services/NumberGenerator';
-import { NumberValidator } from '../services/NumberValidator';
+import { roomManager }
+from '../game/gameInstance';
 
-const SecretSetup = ({ navigation }: any) => {
+import { NumberGenerator }
+from '../services/NumberGenerator';
 
-  const [secret, setSecret] = useState('');
+import { NumberValidator }
+from '../services/NumberValidator';
+
+const SecretSetup = ({
+  navigation,
+  route,
+}: any) => {
+
+  const {
+    roomCode,
+    role,
+  } = route.params;
+
+  const [secret, setSecret] =
+    useState('');
 
   const handleGenerate = () => {
 
@@ -23,27 +37,74 @@ const SecretSetup = ({ navigation }: any) => {
       NumberGenerator.generate();
 
     setSecret(generated);
+
   };
 
   const handleReady = () => {
 
     if (
-      !NumberValidator.isValid(secret)
+      !NumberValidator.isValid(
+        secret
+      )
     ) {
 
       Alert.alert(
         'Invalid Number',
-        'Enter a valid 4-digit number with unique digits.'
+        'Enter a valid 4 digit unique number'
       );
 
       return;
     }
 
-    createGame(secret);
+    try {
 
-    navigation.navigate(
-      'Game'
-    );
+      if (
+        role === 'HOST'
+      ) {
+
+        roomManager.setHostSecret(
+          roomCode,
+          secret
+        );
+
+      } else {
+
+        roomManager.setJoinerSecret(
+          roomCode,
+          secret
+        );
+
+      }
+
+      if (
+        roomManager.canStartGame(
+          roomCode
+        )
+      ) {
+
+        roomManager.startGame(
+          roomCode
+        );
+
+      }
+
+      navigation.navigate(
+        'Game',
+        {
+          roomCode,
+          role,
+        }
+      );
+
+    } catch (error: any) {
+
+      Alert.alert(
+        'Error',
+        error.message
+      );
+
+    }
+
   };
 
   return (
@@ -87,7 +148,9 @@ const SecretSetup = ({ navigation }: any) => {
       </TouchableOpacity>
 
     </View>
+
   );
+
 };
 
 export default SecretSetup;

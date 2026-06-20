@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {
   View,
   Text,
@@ -6,145 +7,158 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { gameEngine } from '../game/GameManager';
+import { roomManager }
+from '../game/gameInstance';
 
-const ResultScreen = ({ navigation }: any) => {
+const ResultScreen = ({
+  navigation,
+  route,
+}: any) => {
 
-  const totalGuesses =
-    gameEngine.getHistory().length;
+  const {
+    roomCode,
+    role,
+  } = route.params;
 
-  const secretNumber =
-    gameEngine.getSecretNumber();
+  const room =
+    roomManager.getRoom(
+      roomCode
+    );
+
+  if (
+    !room ||
+    !room.gameEngine
+  ) {
+
+    return (
+      <View style={styles.container}>
+        <Text style={styles.resultText}>
+          No Game Found
+        </Text>
+      </View>
+    );
+
+  }
+
+  const winner =
+    room.gameEngine.getWinner();
+
+  const isWinner =
+    winner === role;
+
+  const handlePlayAgain =
+    () => {
+
+      roomManager.destroyRoom(
+        roomCode
+      );
+
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'Home',
+          },
+        ],
+      });
+
+    };
 
   return (
+
     <View style={styles.container}>
 
-      <Text style={styles.emoji}>
-        🎉
+      <Text style={styles.title}>
+        GAME OVER
       </Text>
 
       <Text style={styles.resultText}>
-        YOU WIN!
+
+        {isWinner
+          ? '🏆 YOU WIN!'
+          : '💀 YOU LOSE!'}
+
       </Text>
 
-      <View style={styles.infoCard}>
+      <Text style={styles.info}>
 
-        <Text style={styles.label}>
-          Secret Number
-        </Text>
+        Winner:
+        {' '}
+        {winner}
 
-        <Text style={styles.secretNumber}>
-          {secretNumber}
-        </Text>
-
-      </View>
-
-      <View style={styles.infoCard}>
-
-        <Text style={styles.label}>
-          Total Guesses
-        </Text>
-
-        <Text style={styles.secretNumber}>
-          {totalGuesses}
-        </Text>
-
-      </View>
+      </Text>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() =>
-          navigation.navigate(
-            'CreateRoom'
-          )
+        onPress={
+          handlePlayAgain
         }
       >
-        <Text style={styles.buttonText}>
-          Play Again
-        </Text>
-      </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[
-          styles.button,
-          styles.homeButton
-        ]}
-        onPress={() =>
-          navigation.navigate(
-            'Home'
-          )
-        }
-      >
-        <Text style={styles.buttonText}>
+        <Text
+          style={
+            styles.buttonText
+          }
+        >
           Back To Home
         </Text>
+
       </TouchableOpacity>
 
     </View>
+
   );
+
 };
 
 export default ResultScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 25,
-  },
+const styles =
+  StyleSheet.create({
 
-  emoji: {
-    fontSize: 70,
-    marginBottom: 15,
-  },
+    container: {
+      flex: 1,
+      backgroundColor:
+        '#121212',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+      padding: 20,
+    },
 
-  resultText: {
-    color: '#51E927',
-    fontSize: 34,
-    fontWeight: 'bold',
-    marginBottom: 30,
-  },
+    title: {
+      color: '#51E927',
+      fontSize: 32,
+      fontWeight: 'bold',
+      marginBottom: 30,
+    },
 
-  infoCard: {
-    width: '100%',
-    backgroundColor: '#1F1F1F',
-    padding: 20,
-    borderRadius: 15,
-    alignItems: 'center',
-    marginBottom: 40,
-  },
+    resultText: {
+      color: 'white',
+      fontSize: 28,
+      fontWeight: 'bold',
+      marginBottom: 20,
+    },
 
-  label: {
-    color: '#AAA',
-    fontSize: 16,
-    marginBottom: 10,
-  },
+    info: {
+      color: '#AAA',
+      fontSize: 18,
+      marginBottom: 40,
+    },
 
-  secretNumber: {
-    color: '#51E927',
-    fontSize: 36,
-    fontWeight: 'bold',
-    letterSpacing: 4,
-  },
+    button: {
+      backgroundColor:
+        '#51E927',
+      paddingVertical: 15,
+      paddingHorizontal: 40,
+      borderRadius: 10,
+    },
 
-  button: {
-    width: '100%',
-    backgroundColor: '#51E927',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
-  },
+    buttonText: {
+      color: 'black',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
 
-homeButton: {
-  backgroundColor: 'white',
-},
-
- buttonText: {
-  textAlign: 'center',
-  color: '#000',
-  fontSize: 16,
-  fontWeight: 'bold',
-},
-});
+  });

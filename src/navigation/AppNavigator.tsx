@@ -9,18 +9,68 @@ import GameScreen from '../screens/GameScreen';
 import ResultScreen from '../screens/ResultScreen';
 import SecretSetup from '../screens/SecretSetup';
 
-const Stack = createNativeStackNavigator();
+export type RootStackParamList = {
+  Home: undefined;
+
+  CreateRoom: undefined;
+
+  JoinRoom: undefined;
+
+  SecretSetup: {
+    roomCode: string;
+    role: "HOST" | "JOINER";
+  };
+
+  Game: {
+    roomCode: string;
+    role: "HOST" | "JOINER";
+  };
+
+  Result: {
+    roomCode: string;
+  };
+};
+
+const Stack =
+  createNativeStackNavigator<RootStackParamList>();
 
 function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="CreateRoom" component={CreateRoomScreen} />
-        <Stack.Screen name="JoinRoom" component={JoinRoomScreen} />
-        <Stack.Screen name="Game" component={GameScreen} />
-        <Stack.Screen name="Result" component={ResultScreen} />
-        <Stack.Screen name="SecretSetup" component={SecretSetup}/>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false
+        }}
+      >
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+        />
+
+        <Stack.Screen
+          name="CreateRoom"
+          component={CreateRoomScreen}
+        />
+
+        <Stack.Screen
+          name="JoinRoom"
+          component={JoinRoomScreen}
+        />
+
+        <Stack.Screen
+          name="SecretSetup"
+          component={SecretSetup}
+        />
+
+        <Stack.Screen
+          name="Game"
+          component={GameScreen}
+        />
+
+        <Stack.Screen
+          name="Result"
+          component={ResultScreen}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

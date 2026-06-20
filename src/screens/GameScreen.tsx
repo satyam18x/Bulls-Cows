@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { gameEngine } from '../game/GameManager';
+
+import { roomManager } from '../game/gameInstance';
 
 import {
   View,
@@ -12,13 +13,63 @@ import {
   BackHandler,
 } from 'react-native';
 
-const GameScreen = ({ navigation }: any) => {
+const GameScreen = ({
+  navigation,
+  route,
+}: any) => {
 
-  const [guess, setGuess] = useState('');
+  const {
+    roomCode,
+    role,
+  } = route.params;
 
-  const [history, setHistory] = useState(
-    gameEngine.getHistory()
-  );
+  const room =
+    roomManager.getRoom(
+      roomCode
+    );
+
+  if (
+    !room ||
+    !room.gameEngine
+  ) {
+
+    return (
+      <View
+        style={styles.container}
+      >
+        <Text
+          style={{
+            color: 'white',
+            textAlign: 'center',
+          }}
+        >
+          Game not started
+        </Text>
+      </View>
+    );
+
+  }
+
+  const gameEngine =
+    room.gameEngine;
+
+  const [guess, setGuess] =
+    useState('');
+
+  const [history, setHistory] =
+    useState(
+
+      role === 'HOST'
+
+        ? gameEngine
+            .getState()
+            .myHistory
+
+        : gameEngine
+            .getState()
+            .opponentHistory
+
+    );
 
   useEffect(() => {
 
@@ -38,7 +89,11 @@ const GameScreen = ({ navigation }: any) => {
 
               navigation.reset({
                 index: 0,
-                routes: [{ name: 'Home' }],
+                routes: [
+                  {
+                    name: 'Home',
+                  },
+                ],
               });
 
             },
@@ -55,9 +110,8 @@ const GameScreen = ({ navigation }: any) => {
         backAction
       );
 
-    return () => {
+    return () =>
       subscription.remove();
-    };
 
   }, [navigation]);
 
@@ -77,7 +131,11 @@ const GameScreen = ({ navigation }: any) => {
 
             navigation.reset({
               index: 0,
-              routes: [{ name: 'Home' }],
+              routes: [
+                {
+                  name: 'Home',
+                },
+              ],
             });
 
           },
@@ -92,12 +150,26 @@ const GameScreen = ({ navigation }: any) => {
     try {
 
       gameEngine.submitGuess(
+        role,
         guess
       );
 
-      setHistory([
-        ...gameEngine.getHistory()
-      ]);
+      const state =
+        gameEngine.getState();
+
+      setHistory(
+
+        role === 'HOST'
+
+          ? [
+              ...state.myHistory,
+            ]
+
+          : [
+              ...state.opponentHistory,
+            ]
+
+      );
 
       setGuess('');
 
@@ -106,7 +178,11 @@ const GameScreen = ({ navigation }: any) => {
       ) {
 
         navigation.navigate(
-          'Result'
+          'Result',
+          {
+            roomCode,
+            role,
+          }
         );
 
       }
@@ -129,9 +205,15 @@ const GameScreen = ({ navigation }: any) => {
       <View style={styles.header}>
 
         <TouchableOpacity
-          onPress={handleExitGame}
+          onPress={
+            handleExitGame
+          }
         >
-          <Text style={styles.backButton}>
+          <Text
+            style={
+              styles.backButton
+            }
+          >
             ← Back
           </Text>
         </TouchableOpacity>
@@ -142,27 +224,49 @@ const GameScreen = ({ navigation }: any) => {
         BULLS & COWS
       </Text>
 
-      <View style={styles.secretContainer}>
+      <View
+        style={
+          styles.secretContainer
+        }
+      >
 
-        <Text style={styles.label}>
-          Your Secret Number
+        <Text
+          style={styles.label}
+        >
+          Player
         </Text>
 
-        <Text style={styles.secretNumber}>
-          ****
+        <Text
+          style={
+            styles.secretNumber
+          }
+        >
+          {role}
         </Text>
 
       </View>
 
-      <View style={styles.turnBox}>
+      <View
+        style={styles.turnBox}
+      >
 
-        <Text style={styles.turnText}>
-          Your Turn
+        <Text
+          style={styles.turnText}
+        >
+          Current Turn:
+          {' '}
+          {
+            gameEngine
+              .getState()
+              .currentTurn
+          }
         </Text>
 
       </View>
 
-      <Text style={styles.label}>
+      <Text
+        style={styles.label}
+      >
         Enter Guess
       </Text>
 
@@ -173,37 +277,67 @@ const GameScreen = ({ navigation }: any) => {
         keyboardType="numeric"
         maxLength={4}
         value={guess}
-        onChangeText={setGuess}
+        onChangeText={
+          setGuess
+        }
       />
 
       <TouchableOpacity
         style={styles.button}
-        onPress={submitGuess}
+        onPress={
+          submitGuess
+        }
       >
-        <Text style={styles.buttonText}>
+        <Text
+          style={
+            styles.buttonText
+          }
+        >
           Submit Guess
         </Text>
       </TouchableOpacity>
 
-      <Text style={styles.historyTitle}>
+      <Text
+        style={
+          styles.historyTitle
+        }
+      >
         Guess History
       </Text>
 
       <FlatList
         data={history}
-        keyExtractor={(_, index) =>
+        keyExtractor={(
+          _,
+          index
+        ) =>
           index.toString()
         }
-        renderItem={({ item }) => (
+        renderItem={({
+          item,
+        }) => (
 
-          <View style={styles.historyCard}>
+          <View
+            style={
+              styles.historyCard
+            }
+          >
 
-            <Text style={styles.historyGuess}>
+            <Text
+              style={
+                styles.historyGuess
+              }
+            >
               {item.guess}
             </Text>
 
-            <Text style={styles.historyResult}>
-              {item.result.bulls}B {item.result.cows}C
+            <Text
+              style={
+                styles.historyResult
+              }
+            >
+              {item.bulls}B{' '}
+              {item.cows}C
             </Text>
 
           </View>
@@ -214,6 +348,7 @@ const GameScreen = ({ navigation }: any) => {
     </View>
 
   );
+
 };
 
 export default GameScreen;
@@ -222,7 +357,8 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor:
+      '#121212',
     padding: 20,
   },
 
@@ -264,7 +400,8 @@ const styles = StyleSheet.create({
   },
 
   turnBox: {
-    backgroundColor: '#1F1F1F',
+    backgroundColor:
+      '#1F1F1F',
     padding: 12,
     borderRadius: 10,
     marginBottom: 20,
@@ -277,7 +414,8 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    backgroundColor: '#1F1F1F',
+    backgroundColor:
+      '#1F1F1F',
     color: 'white',
     padding: 15,
     borderRadius: 10,
@@ -285,7 +423,8 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    backgroundColor: '#51E927',
+    backgroundColor:
+      '#51E927',
     padding: 15,
     borderRadius: 10,
     marginTop: 15,
@@ -306,12 +445,14 @@ const styles = StyleSheet.create({
   },
 
   historyCard: {
-    backgroundColor: '#1F1F1F',
+    backgroundColor:
+      '#1F1F1F',
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent:
+      'space-between',
   },
 
   historyGuess: {
