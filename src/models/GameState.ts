@@ -1,7 +1,19 @@
 import { GuessRecord } from "./GuessRecord";
+import { PlayerRole } from "./PlayerRole";
 
 export interface GameState {
-    secretNumber: string;
-    guesses: GuessRecord[];
+
+    mySecretNumber: string;
+
+    opponentSecretNumber: string;
+
+    myHistory: GuessRecord[];
+
+    opponentHistory: GuessRecord[];
+
+    currentTurn: PlayerRole;
+
     gameOver: boolean;
+
+    winner?: PlayerRole;
 }

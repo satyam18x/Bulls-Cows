@@ -1,5 +1,5 @@
 import { GameState } from "../models/GameState";
-import { GuessResult } from "../models/GuessResult";
+import { PlayerRole } from "../models/PlayerRole";
 import { GuessRecord } from "../models/GuessRecord";
 
 import { NumberValidator } from "./NumberValidator";
@@ -9,75 +9,154 @@ export class GameEngine {
 
     private state: GameState;
 
-    constructor(secretNumber: string) {
+    constructor(
+        mySecretNumber: string,
+        opponentSecretNumber: string
+    ) {
 
         this.state = {
-            secretNumber,
-            guesses: [],
+
+            mySecretNumber,
+
+            opponentSecretNumber,
+
+            myHistory: [],
+
+            opponentHistory: [],
+
+            currentTurn: "HOST",
+
             gameOver: false
         };
     }
 
     submitGuess(
+        player: PlayerRole,
         guess: string
-    ): GuessResult {
+    ): GuessRecord {
 
-        if (
-            !NumberValidator.isValid(guess)
-        ) {
+        // Game already ended
+        if (this.state.gameOver) {
             throw new Error(
-                "Invalid Guess"
+                "Game is already over"
             );
         }
 
+        // Turn validation
+        if (
+            player !== this.state.currentTurn
+        ) {
+            throw new Error(
+                "Not your turn"
+            );
+        }
+
+        // Guess validation
+        if (
+            !NumberValidator.isValid(
+                guess
+            )
+        ) {
+            throw new Error(
+                "Invalid guess"
+            );
+        }
+
+        // Determine target number
+        const targetNumber =
+            player === "HOST"
+                ? this.state.opponentSecretNumber
+                : this.state.mySecretNumber;
+
+        // Calculate result
         const result =
             BullsCowsCalculator.calculate(
-                this.state.secretNumber,
+                targetNumber,
                 guess
             );
 
         const record: GuessRecord = {
+
             guess,
-            result
+
+            bulls: result.bulls,
+
+            cows: result.cows
         };
 
-        this.state.guesses.push(
-            record
-        );
+        // Store history
+        if (player === "HOST") {
 
-        if (result.bulls === 4) {
-            this.state.gameOver = true;
+            this.state.myHistory.push(
+                record
+            );
+
+        } else {
+
+            this.state.opponentHistory.push(
+                record
+            );
         }
 
-        return result;
-    }
+        // Winner detection
+        if (result.bulls === 4) {
 
-    getHistory() {
-        return this.state.guesses;
-    }
+            this.state.gameOver = true;
 
-    isGameOver() {
-        return this.state.gameOver;
+            this.state.winner = player;
+
+            return record;
+        }
+
+        // Switch turn
+        this.state.currentTurn =
+
+            this.state.currentTurn ===
+            "HOST"
+
+                ? "JOINER"
+
+                : "HOST";
+
+        return record;
     }
 
     getState(): GameState {
-    return this.state;
-}
 
-getSecretNumber(): string {
-    return this.state.secretNumber;
-}
+        return this.state;
+    }
 
-restartGame(
-    secretNumber: string
-): void {
+    getWinner():
+        PlayerRole | undefined {
 
-    this.state = {
-        secretNumber,
-        guesses: [],
-        gameOver: false
-    };
-}
+        return this.state.winner;
+    }
 
+    isGameOver(): boolean {
 
+        return this.state.gameOver;
+    }
+
+    restartGame(
+        mySecretNumber: string,
+        opponentSecretNumber: string
+    ): void {
+
+        this.state = {
+
+            mySecretNumber,
+
+            opponentSecretNumber,
+
+            myHistory: [],
+
+            opponentHistory: [],
+
+            currentTurn: "HOST",
+
+            gameOver: false,
+
+            winner: undefined
+        };
+    }
 }

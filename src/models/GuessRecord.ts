@@ -1,6 +1,5 @@
-import { GuessResult } from "./GuessResult";
-
 export interface GuessRecord {
     guess: string;
-    result: GuessResult;
+    bulls: number;
+    cows: number;
 }
