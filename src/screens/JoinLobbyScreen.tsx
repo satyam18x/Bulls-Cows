@@ -1,30 +1,61 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  FlatList,
   StyleSheet,
   Alert,
 } from 'react-native';
+import Zeroconf from 'react-native-zeroconf';
 import { GameClient } from '../network/GameClient';
 import { GameMessage } from '../network/MessageTypes';
 import { roomManager } from '../game/gameInstance';
 
+const zeroconf = new Zeroconf();
 let client: GameClient;
 
+interface DiscoveredHost {
+  name: string;
+  host: string;
+  port: number;
+}
+
 export default function JoinLobbyScreen({ navigation }: any) {
-  const [hostIP, setHostIP] = useState('');
   const [secret, setSecret] = useState('');
+  const [hosts, setHosts] = useState<DiscoveredHost[]>([]);
   const [connecting, setConnecting] = useState(false);
 
-  const connect = () => {
-    if (!hostIP) {
-      Alert.alert('Missing IP', 'Please enter the host IP address.');
-      return;
-    }
+  useEffect(() => {
+    // Start scanning for hosts on the network
+    zeroconf.scan('bullscows', 'tcp', 'local.');
+
+    zeroconf.on('resolved', (service: any) => {
+      setHosts((prev) => {
+        const exists = prev.find((h) => h.name === service.name);
+        if (exists) return prev;
+        return [...prev, {
+          name: service.name,
+          host: service.addresses[0],
+          port: service.port,
+        }];
+      });
+    });
+
+    zeroconf.on('remove', (name: string) => {
+      setHosts((prev) => prev.filter((h) => h.name !== name));
+    });
+
+    return () => {
+      zeroconf.stop();
+      zeroconf.removeDeviceListeners();
+    };
+  }, []);
+
+  const connectToHost = (host: DiscoveredHost) => {
     if (secret.length !== 4) {
-      Alert.alert('Missing Secret', 'Please enter your 4-digit secret number.');
+      Alert.alert('Missing Secret', 'Enter your 4-digit secret first.');
       return;
     }
 
@@ -45,7 +76,7 @@ export default function JoinLobbyScreen({ navigation }: any) {
       }
     });
 
-    client.connect(hostIP);
+    client.connect(host.host, host.port);
 
     setTimeout(() => {
       client.send({ type: 'SET_SECRET', payload: { secret } });
@@ -54,18 +85,7 @@ export default function JoinLobbyScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-
       <Text style={styles.title}>Join Game</Text>
-
-      <Text style={styles.label}>Host IP Address</Text>
-      <TextInput
-        style={styles.input}
-        value={hostIP}
-        onChangeText={setHostIP}
-        placeholder="192.168.x.x"
-        placeholderTextColor="#888"
-        keyboardType="numeric"
-      />
 
       <Text style={styles.label}>Your 4-digit Secret</Text>
       <TextInput
@@ -78,16 +98,32 @@ export default function JoinLobbyScreen({ navigation }: any) {
         maxLength={4}
       />
 
-      <TouchableOpacity
-        style={[styles.button, connecting && styles.buttonDisabled]}
-        onPress={connect}
-        disabled={connecting}
-      >
-        <Text style={styles.buttonText}>
-          {connecting ? 'Connecting...' : 'Connect & Join'}
-        </Text>
-      </TouchableOpacity>
+      <Text style={styles.sectionTitle}>
+        {hosts.length === 0
+          ? '🔍 Scanning for hosts...'
+          : 'Available Games'}
+      </Text>
 
+      <FlatList
+        data={hosts}
+        keyExtractor={(item) => item.name}
+        style={styles.list}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.hostCard}
+            onPress={() => connectToHost(item)}
+            disabled={connecting}
+          >
+            <Text style={styles.hostName}>🎮 {item.name}</Text>
+            <Text style={styles.hostSub}>Tap to join</Text>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>
+            No games found. Make sure your friend tapped "Create Room" and both phones are on the same WiFi or hotspot.
+          </Text>
+        }
+      />
     </View>
   );
 }
@@ -96,21 +132,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
+    paddingTop: 60,
   },
   title: {
     color: '#51E927',
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 40,
+    marginBottom: 30,
+    textAlign: 'center',
     letterSpacing: 2,
   },
   label: {
     color: '#AAA',
     fontSize: 16,
-    alignSelf: 'flex-start',
     marginBottom: 8,
   },
   input: {
@@ -119,23 +154,42 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     width: '100%',
-    marginBottom: 24,
+    marginBottom: 30,
     fontSize: 18,
     textAlign: 'center',
   },
-  button: {
-    backgroundColor: '#51E927',
-    padding: 15,
-    borderRadius: 10,
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#2a5c12',
-  },
-  buttonText: {
-    color: '#121212',
+  sectionTitle: {
+    color: '#51E927',
+    fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  list: {
+    flex: 1,
+  },
+  hostCard: {
+    backgroundColor: '#1F1F1F',
+    padding: 18,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#51E927',
+  },
+  hostName: {
+    color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  hostSub: {
+    color: '#888',
+    fontSize: 13,
+    marginTop: 4,
+  },
+  emptyText: {
+    color: '#555',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 20,
+    lineHeight: 22,
   },
 });
