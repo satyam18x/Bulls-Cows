@@ -6,22 +6,20 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { NetworkInfo } from 'react-native-network-info';
+import Zeroconf from 'react-native-zeroconf';
 import { GameServer } from '../network/GameServer';
 import { GameMessage } from '../network/MessageTypes';
 import { roomManager } from '../game/gameInstance';
 
+const zeroconf = new Zeroconf();
 let server: GameServer;
 
 export default function HostLobbyScreen({ navigation }: any) {
-  const [ip, setIp] = useState('');
   const [secret, setSecret] = useState('');
   const [joinerConnected, setJoinerConnected] = useState(false);
   const [joinerSecret, setJoinerSecret] = useState('');
 
   useEffect(() => {
-    NetworkInfo.getIPAddress().then((addr) => setIp(addr ?? ''));
-
     server = new GameServer((msg: GameMessage) => {
       if (msg.type === 'SET_SECRET') {
         setJoinerSecret(msg.payload.secret);
@@ -30,7 +28,14 @@ export default function HostLobbyScreen({ navigation }: any) {
     });
 
     server.start(8080);
-    return () => server.stop();
+
+    // Broadcast this device on the local network
+    zeroconf.publishService('bullscows', 'tcp', 'local.', 'BullsCowsGame', 8080);
+
+    return () => {
+      zeroconf.unpublishService('BullsCowsGame');
+      server.stop();
+    };
   }, []);
 
   const startGame = () => {
@@ -50,17 +55,23 @@ export default function HostLobbyScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Your IP Address</Text>
-      <Text style={styles.ip}>{ip || 'Loading...'}</Text>
-      <Text style={styles.hint}>Share this IP with the other player</Text>
+      <Text style={styles.title}>Host Game</Text>
 
-      <Text style={styles.status}>
-        {joinerConnected ? '✅ Joiner Connected!' : '⏳ Waiting for joiner...'}
-      </Text>
+      <View style={styles.statusBox}>
+        <Text style={styles.statusText}>
+          {joinerConnected
+            ? '✅ Friend connected!'
+            : '📡 Waiting for friend to join...'}
+        </Text>
+        <Text style={styles.hint}>
+          Make sure both phones are on the same WiFi or hotspot
+        </Text>
+      </View>
 
+      <Text style={styles.label}>Your 4-digit Secret</Text>
       <TextInput
         style={styles.input}
-        placeholder="Your 4-digit secret"
+        placeholder="1234"
         placeholderTextColor="#888"
         keyboardType="numeric"
         maxLength={4}
@@ -90,28 +101,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  label: {
-    color: '#AAA',
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  ip: {
+  title: {
     color: '#51E927',
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
+    marginBottom: 40,
     letterSpacing: 2,
-    marginBottom: 12,
+  },
+  statusBox: {
+    backgroundColor: '#1F1F1F',
+    padding: 20,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  statusText: {
+    color: '#51E927',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   hint: {
     color: '#888',
-    fontSize: 14,
-    marginBottom: 20,
+    fontSize: 13,
+    textAlign: 'center',
   },
-  status: {
-    color: '#51E927',
+  label: {
+    color: '#AAA',
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 24,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
   },
   input: {
     backgroundColor: '#1F1F1F',
@@ -119,7 +139,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 24,
     fontSize: 18,
     textAlign: 'center',
   },
