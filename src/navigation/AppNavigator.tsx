@@ -8,6 +8,9 @@ import JoinRoomScreen from '../screens/JoinRoom';
 import GameScreen from '../screens/GameScreen';
 import ResultScreen from '../screens/ResultScreen';
 import SecretSetup from '../screens/SecretSetup';
+import HostLobbyScreen from '../screens/HostLobbyScreen';
+import JoinLobbyScreen from '../screens/JoinLobbyScreen';
+
 
 export type RootStackParamList = {
   Home: undefined;
@@ -29,7 +32,10 @@ export type RootStackParamList = {
   Result: {
     roomCode: string;
   };
+  HostLobby: undefined;   
+  JoinLobby: undefined;   
 };
+
 
 const Stack =
   createNativeStackNavigator<RootStackParamList>();
@@ -71,6 +77,8 @@ function AppNavigator() {
           name="Result"
           component={ResultScreen}
         />
+        <Stack.Screen name="HostLobby" component={HostLobbyScreen} />
+        <Stack.Screen name="JoinLobby" component={JoinLobbyScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

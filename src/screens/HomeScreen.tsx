@@ -8,11 +8,20 @@ import {
     ScrollView,
     TouchableOpacity,
 } from "react-native";
+import { roomManager } from '../game/gameInstance';
 
 function HomeScreen({ navigation }: any) {
+    
     const isDarkMode = useColorScheme() === "dark";
 
     const textColor = isDarkMode ? styles.wText : styles.darkText;
+    const handleDevTest = () => {
+  const room = roomManager.createRoom();
+  roomManager.setHostSecret(room.roomCode, '1234');
+  roomManager.setJoinerSecret(room.roomCode, '5678');
+  roomManager.startGame(room.roomCode);
+  navigation.navigate('Game', { roomCode: room.roomCode, role: 'HOST' });
+};
 
     return (
         <View
@@ -29,15 +38,21 @@ function HomeScreen({ navigation }: any) {
 
             <View>
                 <TouchableOpacity
+  style={[styles.button, { backgroundColor: '#333', marginTop: 4 }]}
+  onPress={handleDevTest}
+>
+  <Text style={[styles.buttonText, { color: '#51E927' }]}>🧪 Dev: Test Game</Text>
+</TouchableOpacity>
+                <TouchableOpacity
                     style={styles.button}
-                    onPress={() => navigation.navigate("CreateRoom")}
+                   onPress={() => navigation.navigate('HostLobby')}
                 >
                     <Text style={styles.buttonText}>Create Room</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => navigation.navigate("JoinRoom")}
+                    onPress={() => navigation.navigate('JoinLobby')}
                 >
                     <Text style={styles.buttonText}>Join Room</Text>
                 </TouchableOpacity>

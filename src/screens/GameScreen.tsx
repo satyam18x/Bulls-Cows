@@ -16,6 +16,8 @@ import {
 const GameScreen = ({
   navigation,
   route,
+  server,
+  client
 }: any) => {
 
   const {
@@ -56,19 +58,14 @@ const GameScreen = ({
   const [guess, setGuess] =
     useState('');
 
-  const [history, setHistory] =
+  const [myHistory, setMyHistory] =
     useState(
+      gameEngine.getState().myHistory
+    );
 
-      role === 'HOST'
-
-        ? gameEngine
-            .getState()
-            .myHistory
-
-        : gameEngine
-            .getState()
-            .opponentHistory
-
+  const [opponentHistory, setOpponentHistory] =
+    useState(
+      gameEngine.getState().opponentHistory
     );
 
   useEffect(() => {
@@ -146,57 +143,28 @@ const GameScreen = ({
   };
 
   const submitGuess = () => {
+  try {
+    gameEngine.submitGuess(role, guess);
+    const state = gameEngine.getState();
+    setMyHistory([...state.myHistory]);
+    setOpponentHistory([...state.opponentHistory]);
+    setGuess('');
 
-    try {
-
-      gameEngine.submitGuess(
-        role,
-        guess
-      );
-
-      const state =
-        gameEngine.getState();
-
-      setHistory(
-
-        role === 'HOST'
-
-          ? [
-              ...state.myHistory,
-            ]
-
-          : [
-              ...state.opponentHistory,
-            ]
-
-      );
-
-      setGuess('');
-
-      if (
-        gameEngine.isGameOver()
-      ) {
-
-        navigation.navigate(
-          'Result',
-          {
-            roomCode,
-            role,
-          }
-        );
-
-      }
-
-    } catch (error: any) {
-
-      Alert.alert(
-        'Invalid Guess',
-        error.message
-      );
-
+    // Send guess to opponent
+    if (role === 'HOST') {
+      server.send({ type: 'GUESS', payload: { guess, role } });
+    } else {
+      client.send({ type: 'GUESS', payload: { guess, role } });
     }
 
-  };
+    if (gameEngine.isGameOver()) {
+      navigation.navigate('Result', { roomCode, role });
+    }
+  } catch (error: any) {
+    Alert.alert('Invalid Guess', error.message);
+  }
+};
+
 
   return (
 
@@ -205,15 +173,9 @@ const GameScreen = ({
       <View style={styles.header}>
 
         <TouchableOpacity
-          onPress={
-            handleExitGame
-          }
+          onPress={handleExitGame}
         >
-          <Text
-            style={
-              styles.backButton
-            }
-          >
+          <Text style={styles.backButton}>
             ← Back
           </Text>
         </TouchableOpacity>
@@ -224,49 +186,28 @@ const GameScreen = ({
         BULLS & COWS
       </Text>
 
-      <View
-        style={
-          styles.secretContainer
-        }
-      >
+      <View style={styles.secretContainer}>
 
-        <Text
-          style={styles.label}
-        >
+        <Text style={styles.label}>
           Player
         </Text>
 
-        <Text
-          style={
-            styles.secretNumber
-          }
-        >
+        <Text style={styles.secretNumber}>
           {role}
         </Text>
 
       </View>
 
-      <View
-        style={styles.turnBox}
-      >
+      <View style={styles.turnBox}>
 
-        <Text
-          style={styles.turnText}
-        >
-          Current Turn:
-          {' '}
-          {
-            gameEngine
-              .getState()
-              .currentTurn
-          }
+        <Text style={styles.turnText}>
+          Current Turn:{' '}
+          {gameEngine.getState().currentTurn}
         </Text>
 
       </View>
 
-      <Text
-        style={styles.label}
-      >
+      <Text style={styles.label}>
         Enter Guess
       </Text>
 
@@ -277,73 +218,72 @@ const GameScreen = ({
         keyboardType="numeric"
         maxLength={4}
         value={guess}
-        onChangeText={
-          setGuess
-        }
+        onChangeText={setGuess}
       />
 
       <TouchableOpacity
         style={styles.button}
-        onPress={
-          submitGuess
-        }
+        onPress={submitGuess}
       >
-        <Text
-          style={
-            styles.buttonText
-          }
-        >
+        <Text style={styles.buttonText}>
           Submit Guess
         </Text>
       </TouchableOpacity>
 
-      <Text
-        style={
-          styles.historyTitle
-        }
-      >
-        Guess History
-      </Text>
+      <View style={styles.historyHeader}>
+        <Text style={styles.historyTitle}>
+          Opponent
+        </Text>
+        <Text style={styles.historyTitle}>
+          Host
+        </Text>
+      </View>
 
-      <FlatList
-        data={history}
-        keyExtractor={(
-          _,
-          index
-        ) =>
-          index.toString()
-        }
-        renderItem={({
-          item,
-        }) => (
+      <View style={styles.historyColumns}>
 
-          <View
-            style={
-              styles.historyCard
-            }
-          >
-
-            <Text
-              style={
-                styles.historyGuess
-              }
-            >
-              {item.guess}
+        <FlatList
+          style={styles.historyColumn}
+          data={opponentHistory}
+          keyExtractor={(_, i) => 'opp-' + i}
+          renderItem={({ item }) => (
+            <View style={styles.historyCard}>
+              <Text style={styles.historyGuess}>
+                {item.guess}
+              </Text>
+              <Text style={styles.historyResult}>
+                {item.bulls}B {item.cows}C
+              </Text>
+            </View>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>
+              No guesses yet
             </Text>
+          }
+        />
 
-            <Text
-              style={
-                styles.historyResult
-              }
-            >
-              {item.bulls}B{' '}
-              {item.cows}C
+        <FlatList
+          style={styles.historyColumn}
+          data={myHistory}
+          keyExtractor={(_, i) => 'host-' + i}
+          renderItem={({ item }) => (
+            <View style={styles.historyCard}>
+              <Text style={styles.historyGuess}>
+                {item.guess}
+              </Text>
+              <Text style={styles.historyResult}>
+                {item.bulls}B {item.cows}C
+              </Text>
+            </View>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>
+              No guesses yet
             </Text>
+          }
+        />
 
-          </View>
-
-        )}
-      />
+      </View>
 
     </View>
 
@@ -357,8 +297,7 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor:
-      '#121212',
+    backgroundColor: '#121212',
     padding: 20,
   },
 
@@ -400,8 +339,7 @@ const styles = StyleSheet.create({
   },
 
   turnBox: {
-    backgroundColor:
-      '#1F1F1F',
+    backgroundColor: '#1F1F1F',
     padding: 12,
     borderRadius: 10,
     marginBottom: 20,
@@ -414,8 +352,7 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    backgroundColor:
-      '#1F1F1F',
+    backgroundColor: '#1F1F1F',
     color: 'white',
     padding: 15,
     borderRadius: 10,
@@ -423,8 +360,7 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    backgroundColor:
-      '#51E927',
+    backgroundColor: '#51E927',
     padding: 15,
     borderRadius: 10,
     marginTop: 15,
@@ -437,22 +373,34 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+  },
+
   historyTitle: {
     color: '#51E927',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+  },
+
+  historyColumns: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  historyColumn: {
+    flex: 1,
   },
 
   historyCard: {
-    backgroundColor:
-      '#1F1F1F',
-    padding: 15,
+    backgroundColor: '#1F1F1F',
+    padding: 12,
     borderRadius: 10,
     marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent:
-      'space-between',
+    alignItems: 'center',
   },
 
   historyGuess: {
@@ -464,6 +412,14 @@ const styles = StyleSheet.create({
   historyResult: {
     color: '#51E927',
     fontWeight: 'bold',
+    marginTop: 4,
+  },
+
+  emptyText: {
+    color: '#555',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 10,
   },
 
 });
