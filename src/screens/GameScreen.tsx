@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { roomManager } from '../game/gameInstance';
 
@@ -16,200 +16,164 @@ import {
 const GameScreen = ({
   navigation,
   route,
-  server,
-  client
 }: any) => {
 
   const {
     roomCode,
     role,
+    server,
+    client,
   } = route.params;
 
-  const room =
-    roomManager.getRoom(
-      roomCode
-    );
+  const room = roomManager.getRoom(roomCode);
 
-  if (
-    !room ||
-    !room.gameEngine
-  ) {
-
+  if (!room || !room.gameEngine) {
     return (
-      <View
-        style={styles.container}
-      >
-        <Text
-          style={{
-            color: 'white',
-            textAlign: 'center',
-          }}
-        >
+      <View style={styles.container}>
+        <Text style={{ color: 'white', textAlign: 'center' }}>
           Game not started
         </Text>
       </View>
     );
-
   }
 
-  const gameEngine =
-    room.gameEngine;
+  const gameEngine = room.gameEngine;
 
-  const [guess, setGuess] =
-    useState('');
+  const connectionRef = useRef<any>(role === 'HOST' ? server : client);
 
-  const [myHistory, setMyHistory] =
-    useState(
-      gameEngine.getState().myHistory
-    );
+  const [guess, setGuess] = useState('');
 
-  const [opponentHistory, setOpponentHistory] =
-    useState(
-      gameEngine.getState().opponentHistory
-    );
+  const [currentTurn, setCurrentTurn] = useState(
+    gameEngine.getState().currentTurn
+  );
+
+  const [myHistory, setMyHistory] = useState(
+    gameEngine.getState().myHistory
+  );
+
+  const [opponentHistory, setOpponentHistory] = useState(
+    gameEngine.getState().opponentHistory
+  );
+
+  // Listen for opponent's guess over network
+  useEffect(() => {
+    const connection = connectionRef.current;
+    if (!connection) return;
+
+    connection.onMessage = (msg: any) => {
+      if (msg.type === 'GUESS') {
+        try {
+          gameEngine.submitGuess(msg.payload.role, msg.payload.guess);
+          const state = gameEngine.getState();
+          setMyHistory([...state.myHistory]);
+          setOpponentHistory([...state.opponentHistory]);
+          setCurrentTurn(state.currentTurn);
+
+          if (gameEngine.isGameOver()) {
+            navigation.navigate('Result', { roomCode, role });
+          }
+        } catch (e: any) {
+          console.log('Opponent guess error:', e.message);
+        }
+      }
+    };
+  }, []);
 
   useEffect(() => {
-
     const backAction = () => {
-
       Alert.alert(
         'Exit Game',
         'Are you sure you want to leave the game?',
         [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
+          { text: 'Cancel', style: 'cancel' },
           {
             text: 'Exit',
             onPress: () => {
-
               navigation.reset({
                 index: 0,
-                routes: [
-                  {
-                    name: 'Home',
-                  },
-                ],
+                routes: [{ name: 'Home' }],
               });
-
             },
           },
         ]
       );
-
       return true;
     };
 
-    const subscription =
-      BackHandler.addEventListener(
-        'hardwareBackPress',
-        backAction
-      );
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
 
-    return () =>
-      subscription.remove();
-
+    return () => subscription.remove();
   }, [navigation]);
 
   const handleExitGame = () => {
-
     Alert.alert(
       'Exit Game',
       'Are you sure you want to leave the game?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Exit',
           onPress: () => {
-
             navigation.reset({
               index: 0,
-              routes: [
-                {
-                  name: 'Home',
-                },
-              ],
+              routes: [{ name: 'Home' }],
             });
-
           },
         },
       ]
     );
-
   };
 
   const submitGuess = () => {
-  try {
-    gameEngine.submitGuess(role, guess);
-    const state = gameEngine.getState();
-    setMyHistory([...state.myHistory]);
-    setOpponentHistory([...state.opponentHistory]);
-    setGuess('');
+    try {
+      gameEngine.submitGuess(role, guess);
+      const state = gameEngine.getState();
+      setMyHistory([...state.myHistory]);
+      setOpponentHistory([...state.opponentHistory]);
+      setCurrentTurn(state.currentTurn);
+      setGuess('');
 
-    // Send guess to opponent
-    if (role === 'HOST') {
-      server.send({ type: 'GUESS', payload: { guess, role } });
-    } else {
-      client.send({ type: 'GUESS', payload: { guess, role } });
+      const connection = connectionRef.current;
+      if (connection) {
+        connection.send({ type: 'GUESS', payload: { guess, role } });
+      } else {
+        console.warn('No connection — solo/dev mode');
+      }
+
+      if (gameEngine.isGameOver()) {
+        navigation.navigate('Result', { roomCode, role });
+      }
+    } catch (error: any) {
+      Alert.alert('Invalid Guess', error.message);
     }
-
-    if (gameEngine.isGameOver()) {
-      navigation.navigate('Result', { roomCode, role });
-    }
-  } catch (error: any) {
-    Alert.alert('Invalid Guess', error.message);
-  }
-};
-
+  };
 
   return (
-
     <View style={styles.container}>
 
       <View style={styles.header}>
-
-        <TouchableOpacity
-          onPress={handleExitGame}
-        >
-          <Text style={styles.backButton}>
-            ← Back
-          </Text>
+        <TouchableOpacity onPress={handleExitGame}>
+          <Text style={styles.backButton}>← Back</Text>
         </TouchableOpacity>
-
       </View>
 
-      <Text style={styles.title}>
-        BULLS & COWS
-      </Text>
+      <Text style={styles.title}>BULLS & COWS</Text>
 
       <View style={styles.secretContainer}>
-
-        <Text style={styles.label}>
-          Player
-        </Text>
-
-        <Text style={styles.secretNumber}>
-          {role}
-        </Text>
-
+        <Text style={styles.label}>Player</Text>
+        <Text style={styles.secretNumber}>{role}</Text>
       </View>
 
       <View style={styles.turnBox}>
-
         <Text style={styles.turnText}>
-          Current Turn:{' '}
-          {gameEngine.getState().currentTurn}
+          Current Turn: {currentTurn}
         </Text>
-
       </View>
 
-      <Text style={styles.label}>
-        Enter Guess
-      </Text>
+      <Text style={styles.label}>Enter Guess</Text>
 
       <TextInput
         style={styles.input}
@@ -219,24 +183,25 @@ const GameScreen = ({
         maxLength={4}
         value={guess}
         onChangeText={setGuess}
+        editable={currentTurn === role}
       />
 
       <TouchableOpacity
-        style={styles.button}
+        style={[
+          styles.button,
+          currentTurn !== role && styles.buttonDisabled,
+        ]}
         onPress={submitGuess}
+        disabled={currentTurn !== role}
       >
         <Text style={styles.buttonText}>
-          Submit Guess
+          {currentTurn === role ? 'Submit Guess' : "Opponent's Turn..."}
         </Text>
       </TouchableOpacity>
 
       <View style={styles.historyHeader}>
-        <Text style={styles.historyTitle}>
-          Opponent
-        </Text>
-        <Text style={styles.historyTitle}>
-          Host
-        </Text>
+        <Text style={styles.historyTitle}>Opponent</Text>
+        <Text style={styles.historyTitle}>Host</Text>
       </View>
 
       <View style={styles.historyColumns}>
@@ -247,18 +212,14 @@ const GameScreen = ({
           keyExtractor={(_, i) => 'opp-' + i}
           renderItem={({ item }) => (
             <View style={styles.historyCard}>
-              <Text style={styles.historyGuess}>
-                {item.guess}
-              </Text>
+              <Text style={styles.historyGuess}>{item.guess}</Text>
               <Text style={styles.historyResult}>
                 {item.bulls}B {item.cows}C
               </Text>
             </View>
           )}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>
-              No guesses yet
-            </Text>
+            <Text style={styles.emptyText}>No guesses yet</Text>
           }
         />
 
@@ -268,25 +229,20 @@ const GameScreen = ({
           keyExtractor={(_, i) => 'host-' + i}
           renderItem={({ item }) => (
             <View style={styles.historyCard}>
-              <Text style={styles.historyGuess}>
-                {item.guess}
-              </Text>
+              <Text style={styles.historyGuess}>{item.guess}</Text>
               <Text style={styles.historyResult}>
                 {item.bulls}B {item.cows}C
               </Text>
             </View>
           )}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>
-              No guesses yet
-            </Text>
+            <Text style={styles.emptyText}>No guesses yet</Text>
           }
         />
 
       </View>
 
     </View>
-
   );
 
 };
@@ -365,6 +321,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 15,
     marginBottom: 25,
+  },
+
+  buttonDisabled: {
+    backgroundColor: '#2a5c12',
   },
 
   buttonText: {

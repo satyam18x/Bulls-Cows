@@ -37,11 +37,12 @@ export default function JoinLobbyScreen({ navigation }: any) {
         roomManager.setJoinerSecret(room.roomCode, secret);
         roomManager.startGame(room.roomCode);
 
-        navigation.navigate('Game', {
-          roomCode: room.roomCode,
-          role: 'JOINER',
-          client,
-        });
+       navigation.navigate('Game', {
+  roomCode: room.roomCode,
+  role: 'JOINER',
+  server: null,
+  client,        // ← must be the actual GameClient instance
+});
       }
     });
 

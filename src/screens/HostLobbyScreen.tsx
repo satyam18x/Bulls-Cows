@@ -41,11 +41,12 @@ export default function HostLobbyScreen({ navigation }: any) {
     roomManager.setJoinerSecret(room.roomCode, joinerSecret);
     roomManager.startGame(room.roomCode);
 
-    navigation.navigate('Game', {
-      roomCode: room.roomCode,
-      role: 'HOST',
-      server,
-    });
+   navigation.navigate('Game', {
+  roomCode: room.roomCode,
+  role: 'HOST',
+  server,        // ← must be the actual GameServer instance
+  client: null,
+});
   };
 
   return (
