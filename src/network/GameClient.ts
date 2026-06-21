@@ -9,10 +9,13 @@ export class GameClient {
     this.onMessage = onMessage;
   }
 
-  connect(hostIP: string, port: number = 8080) {
+  connect(hostIP: string, port: number = 8080, onConnected?: () => void) {
     this.socket = TcpSocket.createConnection(
       { host: hostIP, port },
-      () => console.log('Connected to host')
+      () => {
+        console.log('Connected to host');
+        if (onConnected) onConnected(); // ← fire only when truly connected
+      }
     );
 
     this.socket.on('data', (data: any) => {

@@ -45,11 +45,10 @@ export default function JoinLobbyScreen({ navigation }: any) {
       }
     });
 
-    client.connect(hostIP);
-
-    setTimeout(() => {
+    // Send secret only after socket is confirmed open — no setTimeout
+    client.connect(hostIP, 8080, () => {
       client.send({ type: 'SET_SECRET', payload: { secret } });
-    }, 500);
+    });
   };
 
   return (
