@@ -6,20 +6,22 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import Zeroconf from 'react-native-zeroconf';
+import { NetworkInfo } from 'react-native-network-info';
 import { GameServer } from '../network/GameServer';
 import { GameMessage } from '../network/MessageTypes';
 import { roomManager } from '../game/gameInstance';
 
-const zeroconf = new Zeroconf();
 let server: GameServer;
 
 export default function HostLobbyScreen({ navigation }: any) {
+  const [ip, setIp] = useState('');
   const [secret, setSecret] = useState('');
   const [joinerConnected, setJoinerConnected] = useState(false);
   const [joinerSecret, setJoinerSecret] = useState('');
 
   useEffect(() => {
+    NetworkInfo.getIPAddress().then((addr) => setIp(addr ?? ''));
+
     server = new GameServer((msg: GameMessage) => {
       if (msg.type === 'SET_SECRET') {
         setJoinerSecret(msg.payload.secret);
@@ -28,14 +30,7 @@ export default function HostLobbyScreen({ navigation }: any) {
     });
 
     server.start(8080);
-
-    // Broadcast this device on the local network
-    zeroconf.publishService('bullscows', 'tcp', 'local.', 'BullsCowsGame', 8080);
-
-    return () => {
-      zeroconf.unpublishService('BullsCowsGame');
-      server.stop();
-    };
+    return () => server.stop();
   }, []);
 
   const startGame = () => {
@@ -55,23 +50,17 @@ export default function HostLobbyScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Host Game</Text>
+      <Text style={styles.label}>Your IP Address</Text>
+      <Text style={styles.ip}>{ip || 'Loading...'}</Text>
+      <Text style={styles.hint}>Share this IP with the other player</Text>
 
-      <View style={styles.statusBox}>
-        <Text style={styles.statusText}>
-          {joinerConnected
-            ? '✅ Friend connected!'
-            : '📡 Waiting for friend to join...'}
-        </Text>
-        <Text style={styles.hint}>
-          Make sure both phones are on the same WiFi or hotspot
-        </Text>
-      </View>
+      <Text style={styles.status}>
+        {joinerConnected ? '✅ Joiner Connected!' : '⏳ Waiting for joiner...'}
+      </Text>
 
-      <Text style={styles.label}>Your 4-digit Secret</Text>
       <TextInput
         style={styles.input}
-        placeholder="1234"
+        placeholder="Your 4-digit secret"
         placeholderTextColor="#888"
         keyboardType="numeric"
         maxLength={4}
@@ -101,37 +90,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  title: {
-    color: '#51E927',
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 40,
-    letterSpacing: 2,
-  },
-  statusBox: {
-    backgroundColor: '#1F1F1F',
-    padding: 20,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  statusText: {
-    color: '#51E927',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  hint: {
-    color: '#888',
-    fontSize: 13,
-    textAlign: 'center',
-  },
   label: {
     color: '#AAA',
     fontSize: 16,
-    alignSelf: 'flex-start',
     marginBottom: 8,
+  },
+  ip: {
+    color: '#51E927',
+    fontSize: 32,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+    marginBottom: 12,
+  },
+  hint: {
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 20,
+  },
+  status: {
+    color: '#51E927',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 24,
   },
   input: {
     backgroundColor: '#1F1F1F',
@@ -139,7 +119,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     width: '100%',
-    marginBottom: 24,
+    marginBottom: 16,
     fontSize: 18,
     textAlign: 'center',
   },
