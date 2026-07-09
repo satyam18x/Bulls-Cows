@@ -7,8 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { roomManager }
-from '../game/gameInstance';
+import { roomManager } from '../game/gameInstance';
 
 const ResultScreen = ({
   navigation,
@@ -20,145 +19,180 @@ const ResultScreen = ({
     role,
   } = route.params;
 
-  const room =
-    roomManager.getRoom(
-      roomCode
-    );
+  const room = roomManager.getRoom(roomCode);
 
-  if (
-    !room ||
-    !room.gameEngine
-  ) {
-
+  if (!room || !room.gameEngine) {
     return (
       <View style={styles.container}>
-        <Text style={styles.resultText}>
-          No Game Found
-        </Text>
+        <Text style={styles.resultText}>No Game Found</Text>
       </View>
     );
-
   }
 
-  const winner =
-    room.gameEngine.getWinner();
+  const winner = room.gameEngine.getWinner();
+  const isWinner = winner === role;
+  const state = room.gameEngine.getState();
 
-  const isWinner =
-    winner === role;
+  // The number you were guessing = opponent's secret
+  // The number opponent was guessing = your secret
+  const mySecret = role === 'HOST'
+    ? room.hostSecret
+    : room.joinerSecret;
 
-  const handlePlayAgain =
-    () => {
+  const opponentSecret = role === 'HOST'
+    ? room.joinerSecret
+    : room.hostSecret;
 
-      roomManager.destroyRoom(
-        roomCode
-      );
-
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'Home',
-          },
-        ],
-      });
-
-    };
+  const handlePlayAgain = () => {
+    roomManager.destroyRoom(roomCode);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Home' }],
+    });
+  };
 
   return (
-
     <View style={styles.container}>
 
-      <Text style={styles.title}>
-        GAME OVER
-      </Text>
+      <Text style={styles.title}>GAME OVER</Text>
 
       <Text style={styles.resultText}>
-
-        {isWinner
-          ? '🏆 YOU WIN!'
-          : '💀 YOU LOSE!'}
-
+        {isWinner ? '🏆 YOU WIN!' : '💀 YOU LOSE!'}
       </Text>
 
-      <Text style={styles.info}>
-
-        Winner:
-        {' '}
-        {winner}
-
+      <Text style={styles.winnerLabel}>
+        Winner: {winner}
       </Text>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={
-          handlePlayAgain
-        }
-      >
+      <View style={styles.secretsBox}>
+  <Text style={styles.secretLabel}>
+    {isWinner ? '🎯 You cracked it!' : '❌ The number was...'}
+  </Text>
+  <Text style={styles.secretNumber}>
+    {opponentSecret ?? '????'}
+  </Text>
+  <Text style={styles.secretHint}>
+    This was the Secret number
+  </Text>
+</View>
 
-        <Text
-          style={
-            styles.buttonText
-          }
-        >
-          Back To Home
+      <View style={styles.statsBox}>
+        <Text style={styles.statsText}>
+          Your guesses: {state.myHistory.length}
         </Text>
+        <Text style={styles.statsText}>
+          Opponent's guesses: {state.opponentHistory.length}
+        </Text>
+      </View>
 
+      <TouchableOpacity style={styles.button} onPress={handlePlayAgain}>
+        <Text style={styles.buttonText}>Back To Home</Text>
       </TouchableOpacity>
 
     </View>
-
   );
 
 };
 
 export default ResultScreen;
 
-const styles =
-  StyleSheet.create({
+const styles = StyleSheet.create({
 
-    container: {
-      flex: 1,
-      backgroundColor:
-        '#121212',
-      justifyContent:
-        'center',
-      alignItems:
-        'center',
-      padding: 20,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: '#121212',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
 
-    title: {
-      color: '#51E927',
-      fontSize: 32,
-      fontWeight: 'bold',
-      marginBottom: 30,
-    },
+  title: {
+    color: '#51E927',
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
 
-    resultText: {
-      color: 'white',
-      fontSize: 28,
-      fontWeight: 'bold',
-      marginBottom: 20,
-    },
+  resultText: {
+    color: 'white',
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
 
-    info: {
-      color: '#AAA',
-      fontSize: 18,
-      marginBottom: 40,
-    },
+  winnerLabel: {
+    color: '#AAA',
+    fontSize: 16,
+    marginBottom: 30,
+  },
 
-    button: {
-      backgroundColor:
-        '#51E927',
-      paddingVertical: 15,
-      paddingHorizontal: 40,
-      borderRadius: 10,
-    },
+  secretsBox: {
+  backgroundColor: '#1F1F1F',
+  borderRadius: 14,
+  width: '100%',
+  padding: 24,
+  alignItems: 'center',
+  marginBottom: 20,
+},
 
-    buttonText: {
-      color: 'black',
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
+  secretCard: {
+    flex: 1,
+    alignItems: 'center',
+  },
 
-  });
+  secretLabel: {
+    color: '#AAA',
+    fontSize: 13,
+    marginBottom: 8,
+  },
+
+  secretNumber: {
+    color: '#51E927',
+    fontSize: 36,
+    fontWeight: 'bold',
+    letterSpacing: 4,
+    marginBottom: 6,
+  },
+
+  secretHint: {
+    color: '#555',
+    fontSize: 11,
+    textAlign: 'center',
+  },
+
+  divider: {
+    width: 1,
+    height: '100%',
+    backgroundColor: '#333',
+    marginHorizontal: 10,
+  },
+
+  statsBox: {
+    backgroundColor: '#1F1F1F',
+    borderRadius: 10,
+    width: '100%',
+    padding: 16,
+    marginBottom: 30,
+    gap: 6,
+  },
+
+  statsText: {
+    color: '#AAA',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+
+  button: {
+    backgroundColor: '#51E927',
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+  },
+
+  buttonText: {
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+});
