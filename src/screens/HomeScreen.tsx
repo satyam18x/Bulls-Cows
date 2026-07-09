@@ -38,12 +38,6 @@ function HomeScreen({ navigation }: any) {
 
             <View>
                 <TouchableOpacity
-  style={[styles.button, { backgroundColor: '#333', marginTop: 4 }]}
-  onPress={handleDevTest}
->
-  <Text style={[styles.buttonText, { color: '#51E927' }]}>🧪 Dev: Test Game</Text>
-</TouchableOpacity>
-                <TouchableOpacity
                     style={styles.button}
                    onPress={() => navigation.navigate('HostLobby')}
                 >

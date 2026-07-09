@@ -3,7 +3,8 @@ export type MessageType =
   | 'GAME_START'
   | 'GUESS'
   | 'GUESS_RESULT'
-  | 'GAME_OVER';
+  | 'GAME_OVER'
+  | 'PLAYER_EXIT';  // add this
 
 export interface GameMessage {
   type: MessageType;
