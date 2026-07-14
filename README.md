@@ -1,135 +1,169 @@
-# Multiplayer Game
+# 🐂 Bulls & Cows — Multiplayer Mobile Game
 
-A simple 2-player online multiplayer game built using React Native and Spring Boot.
-
-## Tech Stack
-
-### Frontend
-
-* React Native
-
-### Backend
-
-* Spring Boot
-* WebSocket
-
-### Version Control
-
-* GitHub
+A real-time multiplayer number guessing game built with **React Native**, playable over **WiFi or mobile hotspot** — no internet required.
 
 ---
 
-## MVP Features
+## 📱 About the Game
 
-* Create Room
-* Join Room using Room Code
-* Real-time communication using WebSockets
-* 2 Player Gameplay
-* Winner / Loser Result Screen
+Bulls & Cows is a classic code-breaking game where two players secretly choose a 4-digit number and take turns guessing each other's number.
 
----
-
-## Screens
-
-### 1. Home Screen
-
-* Create Room
-* Join Room
-
-### 2. Create Room Screen
-
-* Display Room Code
-* Copy Room Code
-* Waiting for Opponent
-
-### 3. Join Room Screen
-
-* Enter Room Code
-* Join Room
-
-### 4. Gameplay Screen
-
-* Main Game Interface
-* Game State
-* Turn Management
-
-### 5. Result Screen
-
-* Winner / Loser
-* Play Again (Optional)
-* Exit
+- **Bull** = Correct digit in the correct position
+- **Cow** = Correct digit in the wrong position
+- First player to get **4 Bulls** wins
 
 ---
 
-## Game Flow
+## ✨ Features
 
-Home Screen
-↓
-Create Room / Join Room
-↓
-Share Room Code
-↓
-Opponent Joins
-↓
-Game Starts
-↓
-Gameplay
-↓
-Result Screen
+- 🔴 **Real-time multiplayer** over local WiFi or mobile hotspot
+- 📡 **Auto-discovery** — no IP address needed, games appear automatically
+- 🎮 **Custom in-app keyboard** for guess input
+- 📜 **Live guess history** for both players on the same screen
+- 🔒 **Secret number validation** — no duplicates, no leading zero
+- 🚪 **Exit detection** — opponent is notified if you leave mid-game
+- 🏆 **Result screen** showing winner and the opponent's secret number
+- 📴 **Works offline** — no internet or server needed
 
 ---
 
-## Architecture
+## 🛠️ Tech Stack
 
-Player A
-↕
-Spring Boot Server (WebSocket)
-↕
-Player B
-
-The server handles:
-
-* Room Creation
-* Room Joining
-* Game State
-* Turn Validation
-* Winner Detection
+| Technology | Usage |
+|---|---|
+| React Native (CLI) | Cross-platform mobile framework |
+| TypeScript | Type-safe codebase |
+| react-native-tcp-socket | TCP server/client for local multiplayer |
+| react-native-zeroconf | Auto-discovery of games on local network |
+| react-native-network-info | Fetching device local IP |
+| React Navigation | Screen navigation |
 
 ---
 
-## MVP Scope
+## 🏗️ Architecture
 
-Included:
-
-* Online Multiplayer
-* Room System
-* Real-time Updates
-* Gameplay
-
-Not Included:
-
-* Login / Signup
-* User Profiles
-* Database
-* Chat System
-* Leaderboards
-* Friends List
-* Notifications
+```
+src/
+├── game/
+│   ├── gameInstance.ts          # Singleton RoomManager
+│   └── RoomManager.ts           # Room lifecycle management
+├── models/
+│   ├── Room.ts                  # Room model
+│   ├── GuessRecord.ts           # Guess history model
+│   └── GuessResult.ts           # Bulls & cows result model
+├── network/
+│   ├── GameServer.ts            # TCP server (runs on host device)
+│   ├── GameClient.ts            # TCP client (runs on joiner device)
+│   └── MessageTypes.ts          # Shared message type definitions
+├── screens/
+│   ├── HomeScreen.tsx           # Landing screen
+│   ├── HostLobbyScreen.tsx      # Host creates game, waits for joiner
+│   ├── JoinLobbyScreen.tsx      # Joiner scans and joins available game
+│   ├── GameScreen.tsx           # Main gameplay screen
+│   └── ResultScreen.tsx         # Game over screen
+├── services/
+│   └── GameEngine.ts            # Core game logic (guessing, scoring)
+├── navigation/
+│   └── AppNavigator.tsx         # Stack navigator setup
+└── utils/
+    └── validateSecret.ts        # Secret number validation logic
+```
 
 ---
 
-## Development Roles
+## 🔌 How Multiplayer Works
 
-### Frontend (React Native)
+```
+HOST phone                          JOINER phone
+────────────────────────────────────────────────
+Starts TCP server on port 8080
+Broadcasts via Zeroconf (mDNS)
+                                Scans local network
+                                Sees game card appear
+                                Taps to join → connects
+Receives joiner's secret
+Shows "Friend Connected ✅"
+Enters own secret → Start Game
+Sends GAME_START message ──────────────────────►
+                                Navigates to GameScreen
+HOST guesses → GUESS msg ──────────────────────►
+                                Screen updates
+                                JOINER guesses ◄── GUESS msg
+HOST screen updates
+... until 4 Bulls → Result screen
+```
 
-* UI/UX
-* Navigation
-* WebSocket Client
-* Game Screens
+Both phones must be on the **same WiFi or hotspot**. No internet required.
 
-### Backend (Spring Boot)
+---
 
-* Room Management
-* WebSocket Server
-* Game Logic
-* Match Flow
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- React Native CLI
+- Android Studio + JDK 17
+- Android device or emulator
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/bulls-and-cows.git
+cd bulls-and-cows
+
+# Install dependencies
+npm install
+
+# Run on Android
+npx react-native run-android
+```
+
+### Build Release APK
+
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+APK will be at:
+```
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+---
+
+## 🎮 How to Play
+
+1. **Host** opens the app → taps **Create Room**
+2. Host enters their secret 4-digit number and waits
+3. **Joiner** connects to host's WiFi/hotspot → opens app → taps **Join Room**
+4. Joiner sees the game card appear → enters their secret → taps to join
+5. Host sees "Friend Connected" → taps **Start Game**
+6. Both players take turns guessing — HOST goes first
+7. After each guess, Bulls & Cows feedback is shown
+8. First to 4 Bulls wins!
+
+### Secret Number Rules
+- Must be exactly 4 digits
+- No repeating digits
+- Cannot start with 0
+
+---
+
+## 📸 Screenshots
+
+> *(Add your screenshots here)*
+
+---
+
+## 📄 License
+
+MIT License — feel free to use, modify, and distribute.
+
+---
+
+## 👤 Author
+
+**Your Name**
+- GitHub: [@yourusername](https://github.com/yourusername)
