@@ -151,19 +151,3 @@ android/app/build/outputs/apk/release/app-release.apk
 
 ---
 
-## 📸 Screenshots
-
-> *(Add your screenshots here)*
-
----
-
-## 📄 License
-
-MIT License — feel free to use, modify, and distribute.
-
----
-
-## 👤 Author
-
-**Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
