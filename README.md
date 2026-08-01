@@ -1,6 +1,6 @@
 # 🐂 Bulls & Cows — Multiplayer Mobile Game
 
-A real-time multiplayer number guessing game built with **React Native**, playable over **WiFi or mobile hotspot** no internet required.
+A real-time multiplayer number guessing game built with **React Native**, playable over **WiFi or mobile hotspot** - no internet required.
 
 ---
 
